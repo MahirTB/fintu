@@ -1,0 +1,50 @@
+{% from 'partials/category_icons.html' import category_icon %}
+
+<h2>Day Details</h2>
+<div class="breakdown-date-header">
+    {{ selected_date.strftime('%A, %B %d, %Y') }}
+</div>
+
+<div class="breakdown-stats">
+    <div class="breakdown-stat-mini income">
+        <span>Income</span>
+        <span>+৳{{ "{:,.2f}".format(stats.income) }}</span>
+    </div>
+    <div class="breakdown-stat-mini expense">
+        <span>Expenses</span>
+        <span>-৳{{ "{:,.2f}".format(stats.expense) }}</span>
+    </div>
+</div>
+
+<div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.08em; margin: 1rem 0 0.5rem 0;">
+    Transactions
+</div>
+
+<div class="transaction-list-container" style="max-height: 280px; padding-right: 0.25rem;">
+    {% if not transactions %}
+        <div style="text-align: center; color: var(--text-secondary); padding: 2rem 0; font-size: 0.85rem; font-weight: 500;">
+            No transactions recorded on this day.
+        </div>
+    {% else %}
+        <div style="display: flex; flex-direction: column; gap: 0.65rem; width: 100%; min-width: 0;">
+            {% for tx in transactions %}
+            <div class="transaction-item {{ tx.type }}" id="breakdown-tx-{{ tx.id }}">
+                <div class="tx-left">
+                    {{ category_icon(tx.category, tx.type) }}
+                    <div class="tx-details">
+                        <span class="tx-category">{{ tx.category }}</span>
+                        {% if tx.comment %}
+                        <span class="tx-comment">{{ tx.comment }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="tx-right">
+                    <span class="tx-amount {{ tx.type }}">
+                        {% if tx.type == 'income' %}+{% else %}-{% endif %}৳{{ "{:,.2f}".format(tx.amount) }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

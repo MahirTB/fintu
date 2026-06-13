@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Filter Options Header -->
+<div class="filter-row">
+    <h2>Financial Overview</h2>
+    <div class="period-filters">
+        <button class="filter-pill active" 
+                id="filter-current_month" 
+                hx-get="/summary?filter=current_month" 
+                hx-target="#summary-section"
+                hx-swap="outerHTML"
+                onclick="setActiveFilter('current_month')">This Month</button>
+        <button class="filter-pill" 
+                id="filter-7_days" 
+                hx-get="/summary?filter=7_days" 
+                hx-target="#summary-section"
+                hx-swap="outerHTML"
+                onclick="setActiveFilter('7_days')">Last 7 Days</button>
+        <button class="filter-pill" 
+                id="filter-14_days" 
+                hx-get="/summary?filter=14_days" 
+                hx-target="#summary-section"
+                hx-swap="outerHTML"
+                onclick="setActiveFilter('14_days')">Last 14 Days</button>
+        <button class="filter-pill" 
+                id="filter-all_time" 
+                hx-get="/summary?filter=all_time" 
+                hx-target="#summary-section"
+                hx-swap="outerHTML"
+                onclick="setActiveFilter('all_time')">All Time</button>
+    </div>
+</div>
+
+<!-- Stats Cards Section -->
+{% include 'partials/summary.html' %}
+
+<!-- Main Grid Section -->
+<main class="main-grid">
+    <!-- Form Card (Add Income / Expense) -->
+    <section class="form-card">
+        <div class="form-tabs">
+            <button type="button" class="tab-btn active" id="tab-income" onclick="switchTab('income')">Income</button>
+            <button type="button" class="tab-btn" id="tab-expense" onclick="switchTab('expense')">Expense</button>
+        </div>
+        
+        <form id="transaction-form" 
+              hx-post="/transactions" 
+              hx-target="#transaction-list" 
+              hx-swap="outerHTML"
+              hx-on::after-request="if(event.detail.successful) { clearFormInputs(); }">
+            
+            <input type="hidden" name="type" id="form-type" value="income">
+            
+            <div class="form-group">
+                <label for="form-category">Category</label>
+                <select name="category" id="form-category" required>
+                    <!-- Toggled via JS -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="form-amount">Amount (৳)</label>
+                <input type="number" step="0.01" min="0.01" name="amount" id="form-amount" placeholder="0.00" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="form-comment">Comment</label>
+                <input type="text" name="comment" id="form-comment" maxlength="60" placeholder="Add a short note...">
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submit-btn">
+                <!-- Toggled via JS -->
+            </button>
+        </form>
+    </section>
+
+    <!-- History Card (Recent Activity) -->
+    <section class="history-card">
+        <h2>Recent Activity</h2>
+        <div class="transaction-list-container">
+            {% include 'partials/transaction_list.html' %}
+        </div>
+    </section>
+</main>
+
+<script>
+    function clearFormInputs() {
+        const amountInput = document.getElementById('form-amount');
+        const commentInput = document.getElementById('form-comment');
+        if (amountInput) amountInput.value = '';
+        if (commentInput) commentInput.value = '';
+    }
+
+    function setActiveFilter(id) {
+        document.querySelectorAll('.filter-pill').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        const pill = document.getElementById('filter-' + id);
+        if (pill) pill.classList.add('active');
+        
+        // Hide recent activity and center form card if a period filter is active
+        const mainGrid = document.querySelector('.main-grid');
+        const historyCard = document.querySelector('.history-card');
+        
+        if (id === 'current_month') {
+            if (historyCard) historyCard.style.display = 'flex';
+            if (mainGrid) mainGrid.classList.remove('hide-history');
+        } else {
+            if (historyCard) historyCard.style.display = 'none';
+            if (mainGrid) mainGrid.classList.add('hide-history');
+        }
+    }
+
+    const incomeCategories = [
+        { value: 'job', label: 'Job' },
+        { value: 'business', label: 'Business' },
+        { value: 'gig', label: 'Gig' },
+        { value: 'salami', label: 'Salami' },
+        { value: 'gift', label: 'Gift' },
+        { value: 'other', label: 'Other' }
+    ];
+    
+    const expenseCategories = [
+        { value: 'commute', label: 'Commute' },
+        { value: 'grocery', label: 'Grocery' },
+        { value: 'food', label: 'Food' },
+        { value: 'shopping', label: 'Shopping' },
+        { value: 'rent', label: 'Rent' },
+        { value: 'utilities', label: 'Utilities' },
+        { value: 'other', label: 'Other' }
+    ];
+    
+    function switchTab(type) {
+        // Update active tab button style
+        document.getElementById('tab-income').classList.toggle('active', type === 'income');
+        document.getElementById('tab-expense').classList.toggle('active', type === 'expense');
+        
+        // Update hidden input type value
+        document.getElementById('form-type').value = type;
+        
+        // Reset inputs on tab switch
+        const amountInput = document.getElementById('form-amount');
+        const commentInput = document.getElementById('form-comment');
+        if (amountInput) amountInput.value = '';
+        if (commentInput) commentInput.value = '';
+        
+        // Populate correct categories dropdown
+        const select = document.getElementById('form-category');
+        select.innerHTML = '';
+        const categories = type === 'income' ? incomeCategories : expenseCategories;
+        
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.value;
+            opt.textContent = cat.label;
+            select.appendChild(opt);
+        });
+        
+        // Update primary submit button text/icon and background color
+        const btn = document.getElementById('submit-btn');
+        if (type === 'income') {
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Income`;
+            btn.style.backgroundColor = 'var(--income-color)';
+        } else {
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Expense`;
+            btn.style.backgroundColor = 'var(--expense-color)';
+        }
+    }
+    
+    // Set initial category elements
+    document.addEventListener('DOMContentLoaded', () => {
+        switchTab('income');
+    });
+</script>
+{% endblock %}

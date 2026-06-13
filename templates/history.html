@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="calendar-page-grid">
+    <!-- Left Column: Calendar Cards -->
+    <div class="calendar-card">
+        <h2>Last 60 Days Activity</h2>
+        
+        {% for month_data in months %}
+        <div class="month-section">
+            <h3 class="month-name">{{ month_data.name }} {{ month_data.year }}</h3>
+            <div class="calendar-grid">
+                <!-- Weekday Headers -->
+                <div class="weekday-header">Sun</div>
+                <div class="weekday-header">Mon</div>
+                <div class="weekday-header">Tue</div>
+                <div class="weekday-header">Wed</div>
+                <div class="weekday-header">Thu</div>
+                <div class="weekday-header">Fri</div>
+                <div class="weekday-header">Sat</div>
+                
+                <!-- Day Cells -->
+                {% for week in month_data.grid %}
+                    {% for day in week %}
+                        {% if day.day == 0 %}
+                            <div class="calendar-day empty"></div>
+                        {% else %}
+                            <div class="calendar-day {% if not day.in_window %}inactive{% endif %} {% if day.is_today %}today active-selected{% endif %}"
+                                 {% if day.in_window %}
+                                 hx-get="/history/day?date={{ day.date.isoformat() }}"
+                                 hx-target="#day-breakdown"
+                                 onclick="selectCalendarDay(this)"
+                                 title="{{ day.date.strftime('%B %d, %Y') }}"
+                                 {% endif %}>
+                                {{ day.day }}
+                                {% if day.activity %}
+                                    <span class="activity-dot {{ day.activity }}"></span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Right Column: Day Breakdown -->
+    <div class="breakdown-card" id="day-breakdown" hx-get="/history/day?date={{ today.isoformat() }}" hx-trigger="load">
+        <div style="text-align: center; color: var(--text-secondary); padding: 4rem 1rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.75rem; opacity: 0.6;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <p style="font-size: 0.875rem; font-weight: 500;">Loading today's activity...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectCalendarDay(element) {
+        // Remove active class from all days
+        document.querySelectorAll('.calendar-day').forEach(cell => {
+            cell.classList.remove('active-selected');
+        });
+        // Add active class to clicked day
+        element.classList.add('active-selected');
+        
+        // On mobile/tablet, scroll breakdown card into view smoothly
+        if (window.innerWidth <= 768) {
+            const breakdown = document.getElementById('day-breakdown');
+            if (breakdown) {
+                setTimeout(() => {
+                    breakdown.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+    }
+</script>
+{% endblock %}
