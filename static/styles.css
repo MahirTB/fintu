@@ -215,6 +215,10 @@ header {
     justify-content: center;
   }
 
+  .logout-btn-nav span {
+    display: none;
+  }
+
   .main-grid {
     grid-template-columns: 1fr;
   }
