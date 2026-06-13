@@ -7,7 +7,6 @@ from fastapi import FastAPI, Request, Depends, Form, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
 import dotenv
 
@@ -22,25 +21,32 @@ models.Base.metadata.create_all(bind=engine)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Security / Basic Authentication
-security = HTTPBasic()
+# Security / Session Cookie Authentication
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.responses import RedirectResponse
 
-def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
-    correct_username = os.environ.get("APP_USERNAME", "admin")
-    correct_password = os.environ.get("APP_PASSWORD", "admin")
-    
-    is_correct_username = secrets.compare_digest(credentials.username, correct_username)
-    is_correct_password = secrets.compare_digest(credentials.password, correct_password)
-    
-    if not (is_correct_username and is_correct_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-    return credentials.username
+class RedirectException(Exception):
+    def __init__(self, url: str):
+        self.url = url
+
+def get_current_user(request: Request):
+    user = request.session.get("user")
+    if not user:
+        raise RedirectException("/login")
+    return user
 
 app = FastAPI(title="fintu")
+
+# Register Exception Handler for Redirects
+@app.exception_handler(RedirectException)
+def redirect_exception_handler(request: Request, exc: RedirectException):
+    if request.headers.get("HX-Request"):
+        return HTMLResponse(status_code=200, headers={"HX-Redirect": exc.url})
+    return RedirectResponse(url=exc.url, status_code=status.HTTP_303_SEE_OTHER)
+
+# Register Session Middleware
+session_secret = os.environ.get("SESSION_SECRET_KEY", "fintu-super-secret-key-change-in-prod")
+app.add_middleware(SessionMiddleware, secret_key=session_secret, max_age=86400 * 30) # 30 days session
 
 
 # Mount static files
@@ -318,3 +324,53 @@ def get_history_day(request: Request, date: str, db: Session = Depends(get_db)):
             "transactions": txs
         }
     )
+
+@app.get("/login", response_class=HTMLResponse)
+def login_get(request: Request):
+    if request.session.get("user"):
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+        
+    today = datetime.date.today()
+    current_date_str = today.strftime("%B %d, %Y")
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "hide_header": True,
+            "current_date": current_date_str,
+            "error": None
+        }
+    )
+
+@app.post("/login", response_class=HTMLResponse)
+def login_post(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...)
+):
+    correct_username = os.environ.get("APP_USERNAME", "admin")
+    correct_password = os.environ.get("APP_PASSWORD", "admin")
+    
+    is_correct_username = secrets.compare_digest(username, correct_username)
+    is_correct_password = secrets.compare_digest(password, correct_password)
+    
+    if is_correct_username and is_correct_password:
+        request.session["user"] = username
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+        
+    today = datetime.date.today()
+    current_date_str = today.strftime("%B %d, %Y")
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "hide_header": True,
+            "current_date": current_date_str,
+            "error": "Invalid username or password"
+        }
+    )
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)

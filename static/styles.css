@@ -968,3 +968,59 @@ button.submit-btn:active {
   }
 }
 
+/* Custom Login Page Styling */
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  width: 100%;
+}
+
+.login-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.login-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.login-header p {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.error-banner {
+  background-color: var(--expense-bg);
+  color: var(--expense-color);
+  border: 1px solid rgba(179, 57, 57, 0.15);
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.login-btn {
+  margin-top: 0.5rem;
+}
+
+
