@@ -1,22 +1,47 @@
 import datetime
 import os
 import calendar
+import secrets
 from collections import defaultdict
 from fastapi import FastAPI, Request, Depends, Form, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from sqlalchemy.orm import Session
+import dotenv
 
 import models
 from database import engine, get_db
+
+# Load environment variables
+dotenv.load_dotenv()
 
 # Initialize SQLite database tables
 models.Base.metadata.create_all(bind=engine)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Security / Basic Authentication
+security = HTTPBasic()
+
+def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_username = os.environ.get("APP_USERNAME", "admin")
+    correct_password = os.environ.get("APP_PASSWORD", "admin")
+    
+    is_correct_username = secrets.compare_digest(credentials.username, correct_username)
+    is_correct_password = secrets.compare_digest(credentials.password, correct_password)
+    
+    if not (is_correct_username and is_correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
 app = FastAPI(title="fintu")
+
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
@@ -69,7 +94,7 @@ def get_grouped_transactions(db: Session, current_month_only: bool = True):
         
     return transactions_by_date
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 def index(request: Request, db: Session = Depends(get_db)):
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
@@ -99,7 +124,7 @@ def index(request: Request, db: Session = Depends(get_db)):
         }
     )
 
-@app.get("/summary", response_class=HTMLResponse)
+@app.get("/summary", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 def summary_filter(request: Request, filter: str = "current_month", db: Session = Depends(get_db)):
     summary = get_summary_stats(db, filter)
     return templates.TemplateResponse(
@@ -111,7 +136,7 @@ def summary_filter(request: Request, filter: str = "current_month", db: Session 
         }
     )
 
-@app.post("/transactions", response_class=HTMLResponse)
+@app.post("/transactions", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 def create_transaction(
     request: Request,
     type: str = Form(...),
@@ -163,7 +188,7 @@ def create_transaction(
         }
     )
 
-@app.delete("/transactions/{tx_id}", response_class=HTMLResponse)
+@app.delete("/transactions/{tx_id}", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 def delete_transaction(
     request: Request,
     tx_id: int,
@@ -188,7 +213,7 @@ def delete_transaction(
         }
     )
 
-@app.get("/history", response_class=HTMLResponse)
+@app.get("/history", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 def get_history(request: Request, db: Session = Depends(get_db)):
     today = datetime.date.today()
     current_date_str = today.strftime("%B %d, %Y")
@@ -271,7 +296,7 @@ def get_history(request: Request, db: Session = Depends(get_db)):
         }
     )
 
-@app.get("/history/day", response_class=HTMLResponse)
+@app.get("/history/day", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 def get_history_day(request: Request, date: str, db: Session = Depends(get_db)):
     try:
         selected_date = datetime.date.fromisoformat(date)
