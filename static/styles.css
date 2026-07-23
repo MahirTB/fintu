@@ -377,21 +377,28 @@ button.submit-btn:active {
   gap: 0.75rem;
   max-height: 330px;
   overflow-y: auto;
-  padding-right: 0.25rem;
+  padding-right: 0.6rem;
   width: 100%;
   min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hover) transparent;
 }
 
 /* Custom scrollbar for transaction list */
 .transaction-list-container::-webkit-scrollbar {
-  width: 4px;
+  width: 7px;
 }
 .transaction-list-container::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 4px;
 }
 .transaction-list-container::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 2px;
+  background: var(--border-hover);
+  border-radius: 4px;
+  transition: background var(--transition-fast);
+}
+.transaction-list-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
 }
 
 .transaction-item {
