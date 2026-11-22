@@ -87,10 +87,7 @@ def format_trend(curr: float, prev: float, is_expense: bool = False):
         pct = None
         
     if pct is not None:
-        if pct == int(pct):
-            formatted_pct = f"{int(abs(pct))}%"
-        else:
-            formatted_pct = f"{abs(pct):.1f}%"
+        formatted_pct = f"{int(round(abs(pct)))}%"
     else:
         formatted_pct = None
         
@@ -228,7 +225,7 @@ def get_category_breakdown(txs: list, filter_type: str = "current_month"):
     categories = []
     for cat, amount in sorted(expense_by_cat.items(), key=lambda x: x[1], reverse=True):
         pct = (amount / total_expense * 100) if total_expense > 0 else 0
-        pct_str = f"{int(pct)}%" if pct == int(pct) else f"{pct:.1f}%"
+        pct_str = f"{int(round(pct))}%"
         categories.append({
             "category": cat,
             "amount": amount,
@@ -293,11 +290,8 @@ def get_summary_stats(db: Session, filter_type: str = "current_month"):
     savings_rate_str = None
     if curr_income > 0:
         if curr_balance > 0:
-            rate = (curr_balance / curr_income) * 100
-            if rate == int(rate):
-                savings_rate_str = f"{int(rate)}%"
-            else:
-                savings_rate_str = f"{rate:.1f}%"
+            rate = round((curr_balance / curr_income) * 100)
+            savings_rate_str = f"{int(rate)}%"
         else:
             savings_rate_str = "0%"
         
