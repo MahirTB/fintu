@@ -9,7 +9,7 @@
                 </div>
             </div>
             <div class="stat-body">
-                <span class="value">৳{{ "{:,.2f}".format(summary.balance) }}</span>
+                <span class="value">৳{{ "{:,.0f}".format(summary.balance) }}</span>
                 {% if summary.comparison and summary.comparison.has_comparison %}
                     {% if summary.comparison.balance.show_trend %}
                     <div class="stat-trend {{ summary.comparison.balance.status }}">
@@ -53,7 +53,7 @@
             </div>
         </div>
         <div class="stat-body">
-            <span class="value">৳{{ "{:,.2f}".format(summary.income) }}</span>
+            <span class="value">৳{{ "{:,.0f}".format(summary.income) }}</span>
             {% if summary.comparison and summary.comparison.has_comparison %}
                 {% if summary.comparison.income.show_trend %}
                 <div class="stat-trend {{ summary.comparison.income.status }}">
@@ -88,7 +88,7 @@
             </div>
         </div>
         <div class="stat-body">
-            <span class="value">৳{{ "{:,.2f}".format(summary.expense) }}</span>
+            <span class="value">৳{{ "{:,.0f}".format(summary.expense) }}</span>
             {% if summary.comparison and summary.comparison.has_comparison %}
                 {% if summary.comparison.expense.show_trend %}
                 <div class="stat-trend {{ summary.comparison.expense.status }}">

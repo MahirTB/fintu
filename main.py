@@ -95,9 +95,9 @@ def format_trend(curr: float, prev: float, is_expense: bool = False):
         formatted_pct = None
         
     if diff != 0:
-        formatted_diff = f"৳{abs(diff):,.2f}"
+        formatted_diff = f"৳{int(round(abs(diff))):,}"
     else:
-        formatted_diff = "৳0.00"
+        formatted_diff = "৳0"
         
     if is_expense:
         # Spending less is positive (green), spending more is negative (red)
@@ -201,7 +201,7 @@ def get_category_breakdown(txs: list, filter_type: str = "current_month"):
     
     # Calculate daily average spend for the selected window
     if total_expense <= 0:
-        daily_avg_str = "৳0.00/day"
+        daily_avg_str = "৳0/day"
     else:
         if filter_type == "current_month":
             days = max(1, today.day)
@@ -216,11 +216,8 @@ def get_category_breakdown(txs: list, filter_type: str = "current_month"):
                 days = max(1, (today - min_date).days + 1)
             else:
                 days = 1
-        avg = total_expense / days
-        if avg == int(avg):
-            daily_avg_str = f"৳{int(avg):,}/day"
-        else:
-            daily_avg_str = f"৳{avg:,.2f}/day"
+        avg = round(total_expense / days)
+        daily_avg_str = f"৳{int(avg):,}/day"
             
     expense_by_cat = defaultdict(float)
     expense_count_by_cat = defaultdict(int)
@@ -235,7 +232,7 @@ def get_category_breakdown(txs: list, filter_type: str = "current_month"):
         categories.append({
             "category": cat,
             "amount": amount,
-            "formatted_amount": f"৳{amount:,.2f}",
+            "formatted_amount": f"৳{int(round(amount)):,}",
             "percentage": pct,
             "formatted_percentage": pct_str,
             "count": expense_count_by_cat[cat]
@@ -243,7 +240,7 @@ def get_category_breakdown(txs: list, filter_type: str = "current_month"):
         
     return {
         "total": total_expense,
-        "formatted_total": f"৳{total_expense:,.2f}",
+        "formatted_total": f"৳{int(round(total_expense)):,}",
         "count": len(expense_txs),
         "daily_avg_str": daily_avg_str,
         "categories": categories
