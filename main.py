@@ -55,49 +55,270 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 # Templates configuration
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
-# Helper: calculate summary statistics for a period
-def get_summary_stats(db: Session, filter_type: str = "current_month"):
-    today = datetime.date.today()
-    query = db.query(models.Transaction)
+# Helper: format comparative trend metrics
+def format_trend(curr: float, prev: float, is_expense: bool = False):
+    diff = curr - prev
+    has_prior = (prev != 0)
     
-    if filter_type == "7_days":
-        start_date = today - datetime.timedelta(days=6)
-        query = query.filter(models.Transaction.date >= start_date)
-    elif filter_type == "14_days":
-        start_date = today - datetime.timedelta(days=13)
-        query = query.filter(models.Transaction.date >= start_date)
-    elif filter_type == "current_month":
-        start_date = datetime.date(today.year, today.month, 1)
-        query = query.filter(models.Transaction.date >= start_date)
-    # "all_time" has no filter
+    if prev > 0:
+        pct = (diff / prev) * 100
+    elif prev < 0 and not is_expense:
+        pct = (diff / abs(prev)) * 100
+    elif prev == 0 and curr != 0:
+        pct = 100.0
+    else:
+        pct = None
+        
+    if pct is not None:
+        if pct == int(pct):
+            formatted_pct = f"{int(abs(pct))}%"
+        else:
+            formatted_pct = f"{abs(pct):.1f}%"
+    else:
+        formatted_pct = None
+        
+    if diff != 0:
+        formatted_diff = f"৳{abs(diff):,.2f}"
+    else:
+        formatted_diff = "৳0.00"
+        
+    if is_expense:
+        # Spending less is positive (green), spending more is negative (red)
+        if diff > 0:
+            status = "negative"
+        elif diff < 0:
+            status = "positive"
+        else:
+            status = "neutral"
+    else:
+        # Income/Balance: higher is positive (green), lower is negative (red)
+        if diff > 0:
+            status = "positive"
+        elif diff < 0:
+            status = "negative"
+        else:
+            status = "neutral"
+            
+    is_arrow_up = diff > 0
+    is_arrow_down = diff < 0
+    show_trend = (curr != 0 or prev != 0)
     
-    txs = query.all()
-    income = sum(t.amount for t in txs if t.type == 'income')
-    expense = sum(t.amount for t in txs if t.type == 'expense')
-    balance = income - expense
     return {
-        "income": income,
-        "expense": expense,
-        "balance": balance
+        "diff": diff,
+        "pct": pct,
+        "formatted_diff": formatted_diff,
+        "formatted_pct": formatted_pct,
+        "status": status,
+        "is_arrow_up": is_arrow_up,
+        "is_arrow_down": is_arrow_down,
+        "has_prior": has_prior,
+        "show_trend": show_trend
     }
 
-# Helper: get transactions grouped by date (limited to current month by default)
-def get_grouped_transactions(db: Session, current_month_only: bool = True):
+# Helper: calculate date ranges and labels for period filters
+def get_period_dates(filter_type: str = "current_month"):
     today = datetime.date.today()
+    if filter_type == "current_month":
+        curr_start = datetime.date(today.year, today.month, 1)
+        curr_end = None
+        period_label = "vs last month"
+        display_name = "This Month"
+        
+        # Calculate full previous month date window
+        if today.month == 1:
+            prev_year = today.year - 1
+            prev_month = 12
+        else:
+            prev_year = today.year
+            prev_month = today.month - 1
+            
+        prev_start = datetime.date(prev_year, prev_month, 1)
+        last_day = calendar.monthrange(prev_year, prev_month)[1]
+        prev_end = datetime.date(prev_year, prev_month, last_day)
+        has_comparison = True
+        
+    elif filter_type == "7_days":
+        curr_start = today - datetime.timedelta(days=6)
+        curr_end = None
+        period_label = "vs prev 7 days"
+        display_name = "Last 7 Days"
+        
+        prev_start = today - datetime.timedelta(days=13)
+        prev_end = today - datetime.timedelta(days=7)
+        has_comparison = True
+        
+    elif filter_type == "14_days":
+        curr_start = today - datetime.timedelta(days=13)
+        curr_end = None
+        period_label = "vs prev 14 days"
+        display_name = "Last 14 Days"
+        
+        prev_start = today - datetime.timedelta(days=27)
+        prev_end = today - datetime.timedelta(days=14)
+        has_comparison = True
+        
+    else:  # "all_time"
+        curr_start = None
+        curr_end = None
+        prev_start = None
+        prev_end = None
+        has_comparison = False
+        period_label = None
+        display_name = "All Time"
+        
+    return {
+        "curr_start": curr_start,
+        "curr_end": curr_end,
+        "prev_start": prev_start,
+        "prev_end": prev_end,
+        "has_comparison": has_comparison,
+        "period_label": period_label,
+        "display_name": display_name
+    }
+
+# Helper: calculate category breakdown metrics
+def get_category_breakdown(txs: list, filter_type: str = "current_month"):
+    today = datetime.date.today()
+    expense_txs = [t for t in txs if t.type == 'expense']
+    total_expense = sum(t.amount for t in expense_txs)
+    
+    # Calculate daily average spend for the selected window
+    if total_expense <= 0:
+        daily_avg_str = "৳0.00/day"
+    else:
+        if filter_type == "current_month":
+            days = max(1, today.day)
+        elif filter_type == "7_days":
+            days = 7
+        elif filter_type == "14_days":
+            days = 14
+        else:  # "all_time"
+            dates = [t.date for t in txs if t.type == 'expense']
+            if dates:
+                min_date = min(dates)
+                days = max(1, (today - min_date).days + 1)
+            else:
+                days = 1
+        avg = total_expense / days
+        if avg == int(avg):
+            daily_avg_str = f"৳{int(avg):,}/day"
+        else:
+            daily_avg_str = f"৳{avg:,.2f}/day"
+            
+    expense_by_cat = defaultdict(float)
+    expense_count_by_cat = defaultdict(int)
+    for t in expense_txs:
+        expense_by_cat[t.category] += t.amount
+        expense_count_by_cat[t.category] += 1
+        
+    categories = []
+    for cat, amount in sorted(expense_by_cat.items(), key=lambda x: x[1], reverse=True):
+        pct = (amount / total_expense * 100) if total_expense > 0 else 0
+        pct_str = f"{int(pct)}%" if pct == int(pct) else f"{pct:.1f}%"
+        categories.append({
+            "category": cat,
+            "amount": amount,
+            "formatted_amount": f"৳{amount:,.2f}",
+            "percentage": pct,
+            "formatted_percentage": pct_str,
+            "count": expense_count_by_cat[cat]
+        })
+        
+    return {
+        "total": total_expense,
+        "formatted_total": f"৳{total_expense:,.2f}",
+        "count": len(expense_txs),
+        "daily_avg_str": daily_avg_str,
+        "categories": categories
+    }
+
+# Helper: calculate summary statistics for a period with previous period comparison
+def get_summary_stats(db: Session, filter_type: str = "current_month"):
+    period = get_period_dates(filter_type)
+    curr_query = db.query(models.Transaction)
+    prev_query = db.query(models.Transaction)
+    
+    if period["curr_start"]:
+        curr_query = curr_query.filter(models.Transaction.date >= period["curr_start"])
+    if period["curr_end"]:
+        curr_query = curr_query.filter(models.Transaction.date <= period["curr_end"])
+        
+    if period["has_comparison"]:
+        if period["prev_start"]:
+            prev_query = prev_query.filter(models.Transaction.date >= period["prev_start"])
+        if period["prev_end"]:
+            prev_query = prev_query.filter(models.Transaction.date <= period["prev_end"])
+            
+    curr_txs = curr_query.all()
+    curr_income = sum(t.amount for t in curr_txs if t.type == 'income')
+    curr_expense = sum(t.amount for t in curr_txs if t.type == 'expense')
+    curr_balance = curr_income - curr_expense
+    
+    if period["has_comparison"]:
+        prev_txs = prev_query.all()
+        prev_income = sum(t.amount for t in prev_txs if t.type == 'income')
+        prev_expense = sum(t.amount for t in prev_txs if t.type == 'expense')
+        prev_balance = prev_income - prev_expense
+        
+        comparison = {
+            "has_comparison": True,
+            "period_label": period["period_label"],
+            "balance": format_trend(curr_balance, prev_balance, is_expense=False),
+            "income": format_trend(curr_income, prev_income, is_expense=False),
+            "expense": format_trend(curr_expense, prev_expense, is_expense=True),
+        }
+    else:
+        comparison = {
+            "has_comparison": False,
+            "period_label": None,
+            "balance": None,
+            "income": None,
+            "expense": None
+        }
+        
+    savings_rate_str = None
+    if curr_income > 0:
+        if curr_balance > 0:
+            rate = (curr_balance / curr_income) * 100
+            if rate == int(rate):
+                savings_rate_str = f"{int(rate)}%"
+            else:
+                savings_rate_str = f"{rate:.1f}%"
+        else:
+            savings_rate_str = "0%"
+        
+    return {
+        "income": curr_income,
+        "expense": curr_expense,
+        "balance": curr_balance,
+        "savings_rate_str": savings_rate_str,
+        "comparison": comparison,
+        "period": period
+    }
+
+# Helper: get filtered transactions and grouped by date
+def get_filtered_transactions(db: Session, filter_type: str = "current_month"):
+    period = get_period_dates(filter_type)
     query = db.query(models.Transaction)
     
-    if current_month_only:
-        start_date = datetime.date(today.year, today.month, 1)
-        query = query.filter(models.Transaction.date >= start_date)
+    if period["curr_start"]:
+        query = query.filter(models.Transaction.date >= period["curr_start"])
+    if period["curr_end"]:
+        query = query.filter(models.Transaction.date <= period["curr_end"])
         
     txs = query.all()
-    # Sort descending by date, and within the same date, descending by id (newest first)
     sorted_txs = sorted(txs, key=lambda x: (x.date, x.id), reverse=True)
     
     transactions_by_date = defaultdict(list)
     for tx in sorted_txs:
         transactions_by_date[tx.date].append(tx)
         
+    return sorted_txs, transactions_by_date
+
+# Helper: get transactions grouped by date (legacy compatibility)
+def get_grouped_transactions(db: Session, current_month_only: bool = True):
+    filter_type = "current_month" if current_month_only else "all_time"
+    _, transactions_by_date = get_filtered_transactions(db, filter_type)
     return transactions_by_date
 
 @app.get("/", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
@@ -105,13 +326,10 @@ def index(request: Request, db: Session = Depends(get_db)):
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
     
-    # By default, show current month's KPIs and list
+    # By default, show current month's KPIs, breakdown, and list
     summary = get_summary_stats(db, "current_month")
-    transactions_by_date = get_grouped_transactions(db, current_month_only=True)
-    
-    # We pass the transactions list to check empty states for the current month
-    start_date = datetime.date(today.year, today.month, 1)
-    transactions = db.query(models.Transaction).filter(models.Transaction.date >= start_date).all()
+    transactions, transactions_by_date = get_filtered_transactions(db, "current_month")
+    breakdown = get_category_breakdown(transactions, "current_month")
     
     current_date_str = today.strftime("%B %d, %Y")
     
@@ -121,24 +339,41 @@ def index(request: Request, db: Session = Depends(get_db)):
         context={
             "active_page": "dashboard",
             "summary": summary,
+            "breakdown": breakdown,
+            "period": summary["period"],
             "transactions": transactions,
             "transactions_by_date": transactions_by_date,
             "today": today,
             "yesterday": yesterday,
             "current_date": current_date_str,
-            "oob": False
+            "oob_summary": False,
+            "oob_breakdown": False,
+            "oob_tx_list": False
         }
     )
 
 @app.get("/summary", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
 def summary_filter(request: Request, filter: str = "current_month", db: Session = Depends(get_db)):
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
     summary = get_summary_stats(db, filter)
+    transactions, transactions_by_date = get_filtered_transactions(db, filter)
+    breakdown = get_category_breakdown(transactions, filter)
+    
     return templates.TemplateResponse(
         request=request,
-        name="partials/summary.html",
+        name="partials/filter_response.html",
         context={
             "summary": summary,
-            "oob": False
+            "breakdown": breakdown,
+            "period": summary["period"],
+            "transactions": transactions,
+            "transactions_by_date": transactions_by_date,
+            "today": today,
+            "yesterday": yesterday,
+            "oob_summary": False,
+            "oob_breakdown": True,
+            "oob_tx_list": True
         }
     )
 
@@ -176,21 +411,23 @@ def create_transaction(
     today = datetime.date.today()
     yesterday = today - datetime.timedelta(days=1)
     summary = get_summary_stats(db, "current_month")
-    transactions_by_date = get_grouped_transactions(db, current_month_only=True)
-    
-    start_date = datetime.date(today.year, today.month, 1)
-    transactions = db.query(models.Transaction).filter(models.Transaction.date >= start_date).all()
+    transactions, transactions_by_date = get_filtered_transactions(db, "current_month")
+    breakdown = get_category_breakdown(transactions, "current_month")
     
     return templates.TemplateResponse(
         request=request,
         name="partials/post_response.html",
         context={
             "summary": summary,
+            "breakdown": breakdown,
+            "period": summary["period"],
             "transactions": transactions,
             "transactions_by_date": transactions_by_date,
             "today": today,
             "yesterday": yesterday,
-            "oob": True
+            "oob_summary": True,
+            "oob_breakdown": True,
+            "oob_tx_list": False
         }
     )
 
@@ -209,13 +446,19 @@ def delete_transaction(
     
     # Fetch updated summary statistics (using current month as base)
     summary = get_summary_stats(db, "current_month")
+    transactions, _ = get_filtered_transactions(db, "current_month")
+    breakdown = get_category_breakdown(transactions, "current_month")
     
     return templates.TemplateResponse(
         request=request,
         name="partials/delete_response.html",
         context={
             "summary": summary,
-            "oob": True
+            "breakdown": breakdown,
+            "period": summary["period"],
+            "oob_summary": True,
+            "oob_breakdown": True,
+            "oob_tx_list": False
         }
     )
 

@@ -1,0 +1,43 @@
+<section class="breakdown-card" id="breakdown-section" {% if oob_breakdown %}hx-swap-oob="true"{% endif %}>
+    <div class="breakdown-header">
+        <h2>Spending Breakdown <span class="breakdown-window-label">({{ period.display_name if period else 'This Month' }})</span></h2>
+    </div>
+
+    {% if breakdown.categories %}
+        <!-- Daily Avg Metric -->
+        <div class="breakdown-daily-avg">
+            <span class="daily-avg-bullet">•</span>
+            <span class="daily-avg-label">Daily Avg:</span>
+            <span class="daily-avg-value">{{ breakdown.daily_avg_str }}</span>
+        </div>
+
+        <!-- Categories Section -->
+        <div class="breakdown-categories-section">
+            <div class="breakdown-section-title">Categories:</div>
+            
+            <div class="breakdown-bars-list">
+                {% for item in breakdown.categories %}
+                <div class="breakdown-bar-row">
+                    <span class="bar-cat-name" title="{{ item.category|capitalize }}">{{ item.category|capitalize }}</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: {{ item.percentage }}%;"></div>
+                    </div>
+                    <div class="bar-stat">
+                        <span class="bar-pct">{{ item.formatted_percentage }}</span>
+                        <span class="bar-amt">({{ item.formatted_amount }})</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state breakdown-empty">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4"/>
+                <path d="M12 16h.01"/>
+            </svg>
+            <p>No expenses recorded in this period.</p>
+        </div>
+    {% endif %}
+</section>

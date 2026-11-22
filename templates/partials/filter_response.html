@@ -1,0 +1,4 @@
+{% include 'partials/summary.html' %}
+{% include 'partials/breakdown.html' %}
+{% include 'partials/transaction_list.html' %}
+<span id="activity-period-label" class="period-subtitle" hx-swap-oob="true">{{ period.display_name if period else 'This Month' }}</span>
