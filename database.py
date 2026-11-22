@@ -13,8 +13,12 @@ if DATABASE_URL:
     SQLALCHEMY_DATABASE_URL = DATABASE_URL
     connect_args = {}
 else:
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    SQLALCHEMY_DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'finance.db')}"
+    # On serverless platforms (Vercel, AWS Lambda), the filesystem is read-only except /tmp
+    if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+        db_path = "/tmp/finance.db"
+    else:
+        db_path = os.path.join(BASE_DIR, "finance.db")
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_path}"
     connect_args = {"check_same_thread": False}
 
 engine = create_engine(

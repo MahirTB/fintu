@@ -16,8 +16,11 @@ from database import engine, get_db
 # Load environment variables
 dotenv.load_dotenv()
 
-# Initialize SQLite database tables
-models.Base.metadata.create_all(bind=engine)
+# Initialize database tables safely
+try:
+    models.Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"Warning: could not create database tables on startup: {e}")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,6 +40,19 @@ def get_current_user(request: Request):
 
 app = FastAPI(title="fintu")
 
+# Global Exception Handler to capture unhandled runtime errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    traceback.print_exc()
+    return HTMLResponse(
+        status_code=500,
+        content=f"<html><body style='font-family:monospace;padding:2rem;background:#111;color:#f87171;'>"
+                f"<h2>Application Error</h2>"
+                f"<pre style='background:#1e1e1e;padding:1rem;border-radius:6px;overflow-x:auto;color:#e5e7eb;'>"
+                f"{traceback.format_exc()}</pre></body></html>"
+    )
+
 # Register Exception Handler for Redirects
 @app.exception_handler(RedirectException)
 def redirect_exception_handler(request: Request, exc: RedirectException):
@@ -48,9 +64,10 @@ def redirect_exception_handler(request: Request, exc: RedirectException):
 session_secret = os.environ.get("SESSION_SECRET_KEY", "fintu-super-secret-key-change-in-prod")
 app.add_middleware(SessionMiddleware, secret_key=session_secret, max_age=86400 * 30) # 30 days session
 
-
-# Mount static files
-app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
+# Mount static files safely
+static_dir = os.path.join(BASE_DIR, "static")
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Templates configuration
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
