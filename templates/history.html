@@ -2,79 +2,121 @@
 
 {% block content %}
 <div class="calendar-page-grid">
-    <!-- Left Column: Calendar Cards -->
-    <div class="calendar-card">
-        <div class="calendar-card-header">
-            <div>
-                <h2>Activity Calendar</h2>
-                <span class="cal-card-subtitle">Monthly overview & day logs</span>
+    <!-- Left Column: Calendar Card -->
+    <div class="calendar-card" id="calendar-card">
+        <div class="calendar-card-header" id="calendar-card-header" onclick="toggleMobileCalendar(event)">
+            <div class="cal-header-left">
+                <div class="cal-header-title-wrap">
+                    <svg class="cal-header-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <h2>Activity Calendar</h2>
+                </div>
             </div>
-            <div class="cal-nav-group">
-                <a href="/history?year={{ prev_nav_year }}&month={{ prev_nav_month }}" class="cal-nav-btn" title="View preceding months">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    <span>Older</span>
-                </a>
-                {% if has_newer %}
-                <a href="/history?year={{ next_nav_year }}&month={{ next_nav_month }}" class="cal-nav-btn" title="View newer months">
-                    <span>Newer</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                </a>
-                {% else %}
-                <span class="cal-nav-btn disabled" title="Current window">
-                    <span>Current</span>
-                </span>
-                {% endif %}
+            
+            <div class="cal-header-right">
+                <!-- Desktop Navigation Group -->
+                <div class="cal-nav-group desktop-nav">
+                    <a href="/history?year={{ prev_nav_year }}&month={{ prev_nav_month }}" class="cal-nav-btn" title="View preceding months">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                        <span>Older</span>
+                    </a>
+                    {% if has_newer %}
+                    <a href="/history?year={{ next_nav_year }}&month={{ next_nav_month }}" class="cal-nav-btn" title="View newer months">
+                        <span>Newer</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    {% else %}
+                    <span class="cal-nav-btn disabled" title="Current window">
+                        <span>Current</span>
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile Toggle Button (shows e.g. 'Nov 2026 ▾' when collapsed, 'Hide ▴' when expanded) -->
+                <button type="button" class="mobile-cal-toggle-btn" id="mobile-cal-toggle-btn" aria-expanded="false" aria-label="Toggle calendar view">
+                    <span class="mobile-cal-toggle-text" data-month-short="{{ default_month.name[:3] }} {{ default_month.year }}">{{ default_month.name[:3] }} {{ default_month.year }}</span>
+                    <svg class="mobile-cal-chevron" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
             </div>
         </div>
-        
-        {% for month_data in months %}
-        <div class="month-section" id="month-section-{{ month_data.year }}-{{ month_data.month }}">
-            <div class="month-header-row">
-                <h3 class="month-name">{{ month_data.name }} {{ month_data.year }}</h3>
-                <button class="month-pill-btn {% if month_data.is_active %}active-pill{% endif %}"
-                        id="month-pill-{{ month_data.year }}-{{ month_data.month }}"
-                        hx-get="/history/month?year={{ month_data.year }}&month={{ month_data.month }}"
+
+        <div class="calendar-collapsible-body" id="calendar-collapsible-body">
+            <!-- Mobile Month Stepper & View Mode Row -->
+            <div class="mobile-cal-nav-bar">
+                <div class="mobile-month-stepper">
+                    <a href="/history?year={{ prev_nav_year }}&month={{ prev_nav_month }}&cal_open=1" class="month-stepper-btn" title="Previous month" aria-label="Previous month">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </a>
+                    <span class="mobile-month-stepper-title">{{ default_month.name }} {{ default_month.year }}</span>
+                    {% if has_newer %}
+                    <a href="/history?year={{ next_nav_year }}&month={{ next_nav_month }}&cal_open=1" class="month-stepper-btn" title="Next month" aria-label="Next month">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    {% else %}
+                    <span class="month-stepper-btn disabled" title="Current month" aria-disabled="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <button class="month-pill-btn mobile-month-pill-btn {% if default_month.is_active or months[0].is_active %}active-pill{% endif %}"
+                        id="mobile-month-pill-{{ default_month.year }}-{{ default_month.month }}"
+                        hx-get="/history/month?year={{ default_month.year }}&month={{ default_month.month }}"
                         hx-target="#day-breakdown"
                         onclick="selectMonthPill(this)"
-                        title="View complete {{ month_data.name }} overview and spending breakdown">
+                        title="View complete {{ default_month.name }} overview">
                     Full Month
                 </button>
             </div>
-            
-            <div class="calendar-grid">
-                <!-- Weekday Headers -->
-                <div class="weekday-header">Sun</div>
-                <div class="weekday-header">Mon</div>
-                <div class="weekday-header">Tue</div>
-                <div class="weekday-header">Wed</div>
-                <div class="weekday-header">Thu</div>
-                <div class="weekday-header">Fri</div>
-                <div class="weekday-header">Sat</div>
+
+            {% for month_data in months %}
+            <div class="month-section {% if not loop.first %}secondary-month{% endif %}" id="month-section-{{ month_data.year }}-{{ month_data.month }}">
+                <div class="month-header-row">
+                    <h3 class="month-name">{{ month_data.name }} {{ month_data.year }}</h3>
+                    <button class="month-pill-btn {% if month_data.is_active %}active-pill{% endif %}"
+                            id="month-pill-{{ month_data.year }}-{{ month_data.month }}"
+                            hx-get="/history/month?year={{ month_data.year }}&month={{ month_data.month }}"
+                            hx-target="#day-breakdown"
+                            onclick="selectMonthPill(this)"
+                            title="View complete {{ month_data.name }} overview and spending breakdown">
+                        Full Month
+                    </button>
+                </div>
                 
-                <!-- Day Cells -->
-                {% for week in month_data.grid %}
-                    {% for day in week %}
-                        {% if day.day == 0 %}
-                            <div class="calendar-day empty"></div>
-                        {% else %}
-                            <div class="calendar-day {% if not day.in_window %}inactive{% endif %} {% if day.is_today %}today{% endif %}"
-                                 {% if day.in_window %}
-                                 hx-get="/history/day?date={{ day.date.isoformat() }}"
-                                 hx-target="#day-breakdown"
-                                 onclick="selectCalendarDay(this)"
-                                 title="{{ day.date.strftime('%B %d, %Y') }}"
-                                 {% endif %}>
-                                {{ day.day }}
-                                {% if day.activity %}
-                                    <span class="activity-dot {{ day.activity }}"></span>
-                                {% endif %}
-                            </div>
-                        {% endif %}
+                <div class="calendar-grid">
+                    <!-- Weekday Headers -->
+                    <div class="weekday-header">Sun</div>
+                    <div class="weekday-header">Mon</div>
+                    <div class="weekday-header">Tue</div>
+                    <div class="weekday-header">Wed</div>
+                    <div class="weekday-header">Thu</div>
+                    <div class="weekday-header">Fri</div>
+                    <div class="weekday-header">Sat</div>
+                    
+                    <!-- Day Cells -->
+                    {% for week in month_data.grid %}
+                        {% for day in week %}
+                            {% if day.day == 0 %}
+                                <div class="calendar-day empty"></div>
+                            {% else %}
+                                <div class="calendar-day {% if not day.in_window %}inactive{% endif %} {% if day.is_today %}today{% endif %}"
+                                     {% if day.in_window %}
+                                     hx-get="/history/day?date={{ day.date.isoformat() }}"
+                                     hx-target="#day-breakdown"
+                                     onclick="selectCalendarDay(this)"
+                                     title="{{ day.date.strftime('%B %d, %Y') }}"
+                                     {% endif %}>
+                                    {{ day.day }}
+                                    {% if day.activity %}
+                                        <span class="activity-dot {{ day.activity }}"></span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
+                </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
     </div>
 
     <!-- Right Column: Day or Month Breakdown Pane -->
@@ -89,6 +131,33 @@
 </div>
 
 <script>
+    function toggleMobileCalendar(event) {
+        if (window.innerWidth > 860) return;
+        if (event) {
+            // Prevent toggling if user clicked an anchor link or button inside the header
+            if (event.target.closest('a') || (event.target.closest('button') && event.target.closest('button').id !== 'mobile-cal-toggle-btn')) {
+                return;
+            }
+        }
+        const card = document.getElementById('calendar-card');
+        const toggleBtn = document.getElementById('mobile-cal-toggle-btn');
+        const toggleText = toggleBtn ? toggleBtn.querySelector('.mobile-cal-toggle-text') : null;
+        
+        if (!card) return;
+        
+        const isExpanded = card.classList.toggle('mobile-expanded');
+        if (toggleBtn) {
+            toggleBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+        }
+        if (toggleText) {
+            const monthLabel = toggleText.getAttribute('data-month-short') || 'Calendar';
+            toggleText.textContent = isExpanded ? 'Hide' : monthLabel;
+        }
+        try {
+            sessionStorage.setItem('fintu_cal_expanded', isExpanded ? 'true' : 'false');
+        } catch (e) {}
+    }
+
     function selectCalendarDay(element) {
         // Clear active from all day cells
         document.querySelectorAll('.calendar-day').forEach(cell => {
@@ -102,12 +171,12 @@
         element.classList.add('active-selected');
         
         // On mobile/tablet, scroll breakdown card into view smoothly
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 860) {
             const breakdown = document.getElementById('day-breakdown');
             if (breakdown) {
                 setTimeout(() => {
                     breakdown.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
+                }, 120);
             }
         }
     }
@@ -124,13 +193,23 @@
         // Add active to clicked pill
         element.classList.add('active-pill');
         
+        // Also sync corresponding pill (desktop vs mobile)
+        const pillId = element.id;
+        if (pillId) {
+            const pairId = pillId.startsWith('mobile-') ? pillId.replace('mobile-', '') : `mobile-${pillId}`;
+            const pairElement = document.getElementById(pairId);
+            if (pairElement) {
+                pairElement.classList.add('active-pill');
+            }
+        }
+        
         // On mobile/tablet, scroll breakdown card into view smoothly
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 860) {
             const breakdown = document.getElementById('day-breakdown');
             if (breakdown) {
                 setTimeout(() => {
                     breakdown.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
+                }, 120);
             }
         }
     }
@@ -144,11 +223,37 @@
         document.querySelectorAll('.month-pill-btn').forEach(btn => {
             btn.classList.remove('active-pill');
         });
-        // Activate target month pill if on screen
+        // Activate target month pills if on screen
         const targetPill = document.getElementById(`month-pill-${year}-${month}`);
         if (targetPill) {
             targetPill.classList.add('active-pill');
         }
+        const mobileTargetPill = document.getElementById(`mobile-month-pill-${year}-${month}`);
+        if (mobileTargetPill) {
+            mobileTargetPill.classList.add('active-pill');
+        }
     }
+
+    // Handle initialization on mobile
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.innerWidth <= 860) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const calOpenParam = urlParams.get('cal_open');
+            const hasExplicitMonth = urlParams.has('year') || urlParams.has('month');
+            const isStoredOpen = sessionStorage.getItem('fintu_cal_expanded') === 'true';
+            
+            // Auto-expand if cal_open=1 or user navigated with active expansion
+            if (calOpenParam === '1' || (hasExplicitMonth && isStoredOpen)) {
+                const card = document.getElementById('calendar-card');
+                const toggleBtn = document.getElementById('mobile-cal-toggle-btn');
+                const toggleText = toggleBtn ? toggleBtn.querySelector('.mobile-cal-toggle-text') : null;
+                if (card) card.classList.add('mobile-expanded');
+                if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+                if (toggleText) toggleText.textContent = 'Hide';
+            } else if (!window.location.search) {
+                try { sessionStorage.removeItem('fintu_cal_expanded'); } catch(e) {}
+            }
+        }
+    });
 </script>
 {% endblock %}
