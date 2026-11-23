@@ -36,7 +36,7 @@
                         </div>
                         <div class="tx-right">
                             <span class="tx-amount {{ tx.type }}">
-                                {% if tx.type == 'income' %}+{% else %}-{% endif %}৳{{ "{:,.0f}".format(tx.amount) }}
+                                ৳{{ "{:,.0f}".format(tx.amount) }}
                             </span>
                             <button class="delete-btn" 
                                     hx-delete="/transactions/{{ tx.id }}" 
