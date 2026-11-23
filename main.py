@@ -191,7 +191,7 @@ def get_period_dates(filter_type: str = "current_month"):
     }
 
 # Helper: calculate category breakdown metrics
-def get_category_breakdown(txs: list, filter_type: str = "current_month"):
+def get_category_breakdown(txs: list, filter_type: str = "current_month", custom_days: int = None):
     today = datetime.date.today()
     expense_txs = [t for t in txs if t.type == 'expense']
     total_expense = sum(t.amount for t in expense_txs)
@@ -200,7 +200,9 @@ def get_category_breakdown(txs: list, filter_type: str = "current_month"):
     if total_expense <= 0:
         daily_avg_str = "৳0/day"
     else:
-        if filter_type == "current_month":
+        if custom_days is not None:
+            days = max(1, custom_days)
+        elif filter_type == "current_month":
             days = max(1, today.day)
         elif filter_type == "7_days":
             days = 7
@@ -471,26 +473,63 @@ def delete_transaction(
     )
 
 @app.get("/history", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
-def get_history(request: Request, db: Session = Depends(get_db)):
+def get_history(
+    request: Request,
+    year: int = None,
+    month: int = None,
+    db: Session = Depends(get_db)
+):
     today = datetime.date.today()
     current_date_str = today.strftime("%B %d, %Y")
     
-    # Find months in the last 60 days (current month and previous month)
-    # Month 1: Current month
-    m1_month = today.month
-    m1_year = today.year
-    
-    # Month 2: Previous month
-    if today.month == 1:
-        m2_month = 12
-        m2_year = today.year - 1
+    # Base month (Month 1 in the 2-month view)
+    if not year or not month or month < 1 or month > 12:
+        m1_year = today.year
+        m1_month = today.month
     else:
-        m2_month = today.month - 1
-        m2_year = today.year
+        m1_year = year
+        m1_month = month
         
-    # Query transactions in the last 60 days to place dots on calendar
-    start_60_days = today - datetime.timedelta(days=59)
-    txs = db.query(models.Transaction).filter(models.Transaction.date >= start_60_days).all()
+    # Month 2 is the preceding month
+    if m1_month == 1:
+        m2_month = 12
+        m2_year = m1_year - 1
+    else:
+        m2_month = m1_month - 1
+        m2_year = m1_year
+        
+    # Navigation: older window (step back 1 month from m1)
+    if m1_month == 1:
+        prev_nav_year = m1_year - 1
+        prev_nav_month = 12
+    else:
+        prev_nav_year = m1_year
+        prev_nav_month = m1_month - 1
+        
+    # Navigation: newer window (step forward 1 month from m1, capped at current month)
+    is_current_window = (m1_year == today.year and m1_month == today.month)
+    if not is_current_window:
+        has_newer = True
+        if m1_month == 12:
+            next_nav_year = m1_year + 1
+            next_nav_month = 1
+        else:
+            next_nav_year = m1_year
+            next_nav_month = m1_month + 1
+    else:
+        has_newer = False
+        next_nav_year = None
+        next_nav_month = None
+        
+    # Query transactions across both displayed months to accurately place calendar activity dots
+    start_date = datetime.date(m2_year, m2_month, 1)
+    last_day_m1 = calendar.monthrange(m1_year, m1_month)[1]
+    end_date = datetime.date(m1_year, m1_month, last_day_m1)
+    
+    txs = db.query(models.Transaction).filter(
+        models.Transaction.date >= start_date,
+        models.Transaction.date <= end_date
+    ).all()
     
     # Group transactions by type for each date
     tx_types_by_date = defaultdict(set)
@@ -499,8 +538,8 @@ def get_history(request: Request, db: Session = Depends(get_db)):
         
     cal_obj = calendar.Calendar(firstweekday=6) # Sunday start
     
-    def get_month_data(year, month):
-        weeks = cal_obj.monthdays2calendar(year, month)
+    def get_month_data(yr, mo, is_active):
+        weeks = cal_obj.monthdays2calendar(yr, mo)
         grid = []
         for week in weeks:
             week_days = []
@@ -508,8 +547,8 @@ def get_history(request: Request, db: Session = Depends(get_db)):
                 if day == 0:
                     week_days.append({"day": 0, "date": None, "in_window": False, "activity": None})
                 else:
-                    d = datetime.date(year, month, day)
-                    in_window = start_60_days <= d <= today
+                    d = datetime.date(yr, mo, day)
+                    in_window = (d <= today)
                     
                     # Compute activity dot classes
                     activity = None
@@ -532,15 +571,23 @@ def get_history(request: Request, db: Session = Depends(get_db)):
                     })
             grid.append(week_days)
         return {
-            "name": calendar.month_name[month],
-            "year": year,
+            "name": calendar.month_name[mo],
+            "year": yr,
+            "month": mo,
+            "is_active": is_active,
             "grid": grid
         }
         
     months = [
-        get_month_data(m1_year, m1_month),
-        get_month_data(m2_year, m2_month)
+        get_month_data(m1_year, m1_month, is_active=True),
+        get_month_data(m2_year, m2_month, is_active=False)
     ]
+    
+    default_month = {
+        "year": m1_year,
+        "month": m1_month,
+        "name": calendar.month_name[m1_month]
+    }
     
     return templates.TemplateResponse(
         request=request,
@@ -548,8 +595,79 @@ def get_history(request: Request, db: Session = Depends(get_db)):
         context={
             "active_page": "history",
             "months": months,
+            "default_month": default_month,
             "current_date": current_date_str,
-            "today": today
+            "today": today,
+            "has_newer": has_newer,
+            "prev_nav_year": prev_nav_year,
+            "prev_nav_month": prev_nav_month,
+            "next_nav_year": next_nav_year,
+            "next_nav_month": next_nav_month,
+            "is_current_window": is_current_window
+        }
+    )
+
+@app.get("/history/month", response_class=HTMLResponse, dependencies=[Depends(get_current_user)])
+def get_history_month(request: Request, year: int, month: int, db: Session = Depends(get_db)):
+    today = datetime.date.today()
+    try:
+        start_date = datetime.date(year, month, 1)
+        last_day = calendar.monthrange(year, month)[1]
+        end_date = datetime.date(year, month, last_day)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid year or month")
+        
+    txs = db.query(models.Transaction).filter(
+        models.Transaction.date >= start_date,
+        models.Transaction.date <= end_date
+    ).order_by(models.Transaction.date.desc(), models.Transaction.id.desc()).all()
+    
+    income = sum(t.amount for t in txs if t.type == 'income')
+    expense = sum(t.amount for t in txs if t.type == 'expense')
+    balance = income - expense
+    
+    savings_rate = None
+    if income > 0:
+        if balance > 0:
+            savings_rate = f"{int(round((balance / income) * 100))}%"
+        else:
+            savings_rate = "0%"
+            
+    # Calculate daily average days
+    if year == today.year and month == today.month:
+        calc_days = max(1, today.day)
+    elif start_date < datetime.date(today.year, today.month, 1):
+        calc_days = last_day
+    else:
+        calc_days = 1
+        
+    breakdown = get_category_breakdown(txs, custom_days=calc_days)
+    
+    # Group transactions by date
+    txs_by_date = defaultdict(list)
+    for t in txs:
+        txs_by_date[t.date].append(t)
+        
+    month_name = calendar.month_name[month]
+    
+    return templates.TemplateResponse(
+        request=request,
+        name="partials/month_breakdown.html",
+        context={
+            "year": year,
+            "month": month,
+            "month_name": month_name,
+            "start_date": start_date,
+            "end_date": end_date,
+            "txs": txs,
+            "txs_by_date": txs_by_date,
+            "income": income,
+            "expense": expense,
+            "balance": balance,
+            "savings_rate": savings_rate,
+            "breakdown": breakdown,
+            "calc_days": calc_days,
+            "is_current_month": (year == today.year and month == today.month)
         }
     )
 
@@ -560,18 +678,22 @@ def get_history_day(request: Request, date: str, db: Session = Depends(get_db)):
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format")
         
-    txs = db.query(models.Transaction).filter(models.Transaction.date == selected_date).all()
+    txs = db.query(models.Transaction).filter(models.Transaction.date == selected_date).order_by(models.Transaction.id.desc()).all()
     
     # Calculate stats for this specific day
     income = sum(t.amount for t in txs if t.type == 'income')
     expense = sum(t.amount for t in txs if t.type == 'expense')
+    balance = income - expense
+    
+    breakdown = get_category_breakdown(txs, custom_days=1)
     
     return templates.TemplateResponse(
         request=request,
         name="partials/day_breakdown.html",
         context={
             "selected_date": selected_date,
-            "stats": {"income": income, "expense": expense},
+            "stats": {"income": income, "expense": expense, "balance": balance},
+            "breakdown": breakdown,
             "transactions": txs
         }
     )

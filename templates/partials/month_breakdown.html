@@ -1,0 +1,113 @@
+{% from 'partials/category_icons.html' import category_icon %}
+
+<div class="month-breakdown-wrapper">
+    <!-- Header -->
+    <div class="month-overview-header">
+        <div class="month-overview-title-group">
+            <h2>{{ month_name }} {{ year }} Overview</h2>
+            <div class="month-overview-badge">
+                {{ txs|length }} transaction{% if txs|length != 1 %}s{% endif %} • {% if is_current_month %}Current Month{% else %}Full Month{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="month-kpi-grid">
+        <div class="month-kpi-card income">
+            <span class="kpi-label">Total Income</span>
+            <span class="kpi-value">+৳{{ "{:,.0f}".format(income) }}</span>
+        </div>
+        <div class="month-kpi-card expense">
+            <span class="kpi-label">Total Expenses</span>
+            <span class="kpi-value">-৳{{ "{:,.0f}".format(expense) }}</span>
+        </div>
+        <div class="month-kpi-card balance {% if balance >= 0 %}positive{% else %}negative{% endif %}">
+            <div class="kpi-label-row">
+                <span class="kpi-label">Net Balance</span>
+                {% if savings_rate %}
+                <span class="kpi-savings-badge">savings {{ savings_rate }}</span>
+                {% endif %}
+            </div>
+            <span class="kpi-value">৳{{ "{:,.0f}".format(balance) }}</span>
+        </div>
+    </div>
+
+    <!-- Spending Breakdown Section (Wireframe Style) -->
+    <div class="breakdown-categories-section">
+        <div class="breakdown-section-header">
+            <span class="breakdown-section-title">Spending Breakdown ({{ month_name }})</span>
+            <span class="breakdown-daily-avg">
+                <span class="daily-avg-bullet">•</span>
+                <span class="daily-avg-label">Daily Avg:</span>
+                <span class="daily-avg-value">{{ breakdown.daily_avg_str }}</span>
+            </span>
+        </div>
+
+        {% if breakdown.categories %}
+        <div class="breakdown-bars-list">
+            {% for item in breakdown.categories %}
+            <div class="breakdown-bar-row">
+                <span class="bar-cat-name" title="{{ item.category }}">{{ item.category }}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ item.percentage }}%;"></div>
+                </div>
+                <div class="bar-stat">
+                    <span class="bar-pct">{{ item.formatted_percentage }}</span>
+                    <span class="bar-amt">({{ item.formatted_amount }})</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="breakdown-empty-msg">
+            No expenses recorded in {{ month_name }} {{ year }}.
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Month Transactions Section -->
+    <div class="month-tx-section">
+        <div class="breakdown-section-title" style="margin-top: 0.5rem; margin-bottom: 0.6rem;">
+            Transactions Log
+        </div>
+
+        <div class="transaction-list-container" style="max-height: 380px;">
+            {% if not txs %}
+                <div class="breakdown-empty-msg">
+                    No transactions recorded for this month.
+                </div>
+            {% else %}
+                <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+                    {% for date_val, day_txs in txs_by_date.items() %}
+                    <div class="history-tx-group">
+                        <div class="history-group-header">
+                            <span class="group-date">{{ date_val.strftime('%A, %b %d') }}</span>
+                            <span class="group-count">{{ day_txs|length }}</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%; min-width: 0;">
+                            {% for tx in day_txs %}
+                            <div class="transaction-item {{ tx.type }}">
+                                <div class="tx-left">
+                                    {{ category_icon(tx.category, tx.type) }}
+                                    <div class="tx-details">
+                                        <span class="tx-category">{{ tx.category }}</span>
+                                        {% if tx.comment %}
+                                        <span class="tx-comment">{{ tx.comment }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="tx-right">
+                                    <span class="tx-amount {{ tx.type }}">
+                                        {% if tx.type == 'income' %}+{% else %}-{% endif %}৳{{ "{:,.0f}".format(tx.amount) }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

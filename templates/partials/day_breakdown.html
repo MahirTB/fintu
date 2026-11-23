@@ -1,50 +1,95 @@
 {% from 'partials/category_icons.html' import category_icon %}
 
-<h2>Day Details</h2>
-<div class="breakdown-date-header">
-    {{ selected_date.strftime('%A, %B %d, %Y') }}
-</div>
-
-<div class="breakdown-stats">
-    <div class="breakdown-stat-mini income">
-        <span>Income</span>
-        <span>+৳{{ "{:,.0f}".format(stats.income) }}</span>
+<div class="day-breakdown-wrapper">
+    <!-- Top Back Navigation -->
+    <div class="breakdown-back-nav">
+        <button class="back-to-month-btn"
+                hx-get="/history/month?year={{ selected_date.year }}&month={{ selected_date.month }}"
+                hx-target="#day-breakdown"
+                onclick="selectMonthOverviewByDate({{ selected_date.year }}, {{ selected_date.month }})">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <span>View {{ selected_date.strftime('%B %Y') }} Overview</span>
+        </button>
     </div>
-    <div class="breakdown-stat-mini expense">
-        <span>Expenses</span>
-        <span>-৳{{ "{:,.0f}".format(stats.expense) }}</span>
-    </div>
-</div>
 
-<div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); letter-spacing: 0.08em; margin: 1rem 0 0.5rem 0;">
-    Transactions
-</div>
-
-<div class="transaction-list-container" style="max-height: 280px;">
-    {% if not transactions %}
-        <div style="text-align: center; color: var(--text-secondary); padding: 2rem 0; font-size: 0.85rem; font-weight: 500;">
-            No transactions recorded on this day.
+    <!-- Header -->
+    <div class="day-overview-header">
+        <h2>Day Details</h2>
+        <div class="breakdown-date-header">
+            {{ selected_date.strftime('%A, %B %d, %Y') }}
         </div>
-    {% else %}
-        <div style="display: flex; flex-direction: column; gap: 0.65rem; width: 100%; min-width: 0;">
-            {% for tx in transactions %}
-            <div class="transaction-item {{ tx.type }}" id="breakdown-tx-{{ tx.id }}">
-                <div class="tx-left">
-                    {{ category_icon(tx.category, tx.type) }}
-                    <div class="tx-details">
-                        <span class="tx-category">{{ tx.category }}</span>
-                        {% if tx.comment %}
-                        <span class="tx-comment">{{ tx.comment }}</span>
-                        {% endif %}
-                    </div>
+    </div>
+
+    <!-- Day Stats -->
+    <div class="day-kpi-grid">
+        <div class="breakdown-stat-mini income">
+            <span>Income</span>
+            <span>+৳{{ "{:,.0f}".format(stats.income) }}</span>
+        </div>
+        <div class="breakdown-stat-mini expense">
+            <span>Expenses</span>
+            <span>-৳{{ "{:,.0f}".format(stats.expense) }}</span>
+        </div>
+        <div class="breakdown-stat-mini balance {% if stats.balance >= 0 %}positive{% else %}negative{% endif %}">
+            <span>Net</span>
+            <span>৳{{ "{:,.0f}".format(stats.balance) }}</span>
+        </div>
+    </div>
+
+    <!-- Optional Day Breakdown if categories exist -->
+    {% if breakdown and breakdown.categories %}
+    <div class="breakdown-categories-section" style="margin-top: 0.5rem;">
+        <span class="breakdown-section-title">Day Spending Breakdown</span>
+        <div class="breakdown-bars-list">
+            {% for item in breakdown.categories %}
+            <div class="breakdown-bar-row">
+                <span class="bar-cat-name" title="{{ item.category }}">{{ item.category }}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {{ item.percentage }}%;"></div>
                 </div>
-                <div class="tx-right">
-                    <span class="tx-amount {{ tx.type }}">
-                        {% if tx.type == 'income' %}+{% else %}-{% endif %}৳{{ "{:,.0f}".format(tx.amount) }}
-                    </span>
+                <div class="bar-stat">
+                    <span class="bar-pct">{{ item.formatted_percentage }}</span>
+                    <span class="bar-amt">({{ item.formatted_amount }})</span>
                 </div>
             </div>
             {% endfor %}
         </div>
+    </div>
     {% endif %}
+
+    <!-- Transactions on this day -->
+    <div class="day-tx-section" style="margin-top: 0.5rem;">
+        <div class="breakdown-section-title" style="margin-bottom: 0.6rem;">
+            Transactions
+        </div>
+
+        <div class="transaction-list-container" style="max-height: 280px;">
+            {% if not transactions %}
+                <div class="breakdown-empty-msg">
+                    No transactions recorded on this day.
+                </div>
+            {% else %}
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; width: 100%; min-width: 0;">
+                    {% for tx in transactions %}
+                    <div class="transaction-item {{ tx.type }}" id="breakdown-tx-{{ tx.id }}">
+                        <div class="tx-left">
+                            {{ category_icon(tx.category, tx.type) }}
+                            <div class="tx-details">
+                                <span class="tx-category">{{ tx.category }}</span>
+                                {% if tx.comment %}
+                                <span class="tx-comment">{{ tx.comment }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="tx-right">
+                            <span class="tx-amount {{ tx.type }}">
+                                {% if tx.type == 'income' %}+{% else %}-{% endif %}৳{{ "{:,.0f}".format(tx.amount) }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </div>

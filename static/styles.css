@@ -1047,10 +1047,81 @@ button.submit-btn:active {
   min-width: 0;
 }
 
+/* Calendar Card Header & Navigation */
+.calendar-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.calendar-card-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.cal-card-subtitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.cal-nav-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--bg-color);
+  padding: 0.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+}
+
+.cal-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+
+.cal-nav-btn:hover:not(.disabled) {
+  color: var(--text-primary);
+  background-color: var(--card-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+.cal-nav-btn.disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
 .month-section {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+
+/* Month Section Header Row & Pill */
+.month-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .month-name {
@@ -1059,8 +1130,36 @@ button.submit-btn:active {
   letter-spacing: -0.02em;
   text-transform: capitalize;
   color: var(--text-primary);
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--border-color);
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.month-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.month-pill-btn:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  background-color: var(--bg-color);
+}
+
+.month-pill-btn.active-pill {
+  background-color: var(--text-primary) !important;
+  color: var(--card-bg) !important;
+  border-color: var(--text-primary) !important;
+  box-shadow: var(--shadow-sm);
 }
 
 .calendar-grid {
@@ -1344,6 +1443,187 @@ button.submit-btn:active {
   color: var(--expense-color);
 }
 
+/* Month Breakdown Overview Pane */
+.month-breakdown-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.month-overview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.month-overview-title-group h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+}
+
+.month-overview-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Month KPI Grid */
+.month-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.month-kpi-card {
+  background-color: var(--bg-color);
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.month-kpi-card .kpi-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.month-kpi-card .kpi-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.month-kpi-card.income .kpi-value {
+  color: var(--income-color);
+}
+
+.month-kpi-card.expense .kpi-value {
+  color: var(--expense-color);
+}
+
+.month-kpi-card.balance.positive .kpi-value {
+  color: var(--income-color);
+}
+
+.month-kpi-card.balance.negative .kpi-value {
+  color: var(--expense-color);
+}
+
+.kpi-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.kpi-savings-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--income-color);
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+/* Day Breakdown Top Bar & Back Button */
+.breakdown-back-nav {
+  margin-bottom: 0.25rem;
+}
+
+.back-to-month-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.back-to-month-btn:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  background-color: var(--card-bg);
+}
+
+.day-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.breakdown-stat-mini.balance.positive span:last-child {
+  color: var(--income-color);
+}
+
+.breakdown-stat-mini.balance.negative span:last-child {
+  color: var(--expense-color);
+}
+
+/* History Grouped Transaction Log */
+.history-tx-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.history-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.35rem 0.2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.group-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.group-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background-color: var(--bg-color);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+}
+
+.breakdown-empty-msg {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px dashed var(--border-color);
+  border-radius: 10px;
+}
+
 /* Responsive Enhancements for Mobile Viewports */
 @media (max-width: 768px) {
   .delete-btn {
@@ -1381,6 +1661,18 @@ button.submit-btn:active {
     padding: 0.4rem 0.8rem;
     font-size: 0.72rem;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .month-kpi-grid, .day-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .calendar-card-header {
+    flex-wrap: wrap;
+    gap: 0.6rem;
   }
 }
 

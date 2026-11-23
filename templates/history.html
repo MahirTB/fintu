@@ -4,11 +4,43 @@
 <div class="calendar-page-grid">
     <!-- Left Column: Calendar Cards -->
     <div class="calendar-card">
-        <h2>Last 60 Days Activity</h2>
+        <div class="calendar-card-header">
+            <div>
+                <h2>Activity Calendar</h2>
+                <span class="cal-card-subtitle">Monthly overview & day logs</span>
+            </div>
+            <div class="cal-nav-group">
+                <a href="/history?year={{ prev_nav_year }}&month={{ prev_nav_month }}" class="cal-nav-btn" title="View preceding months">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    <span>Older</span>
+                </a>
+                {% if has_newer %}
+                <a href="/history?year={{ next_nav_year }}&month={{ next_nav_month }}" class="cal-nav-btn" title="View newer months">
+                    <span>Newer</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                </a>
+                {% else %}
+                <span class="cal-nav-btn disabled" title="Current window">
+                    <span>Current</span>
+                </span>
+                {% endif %}
+            </div>
+        </div>
         
         {% for month_data in months %}
-        <div class="month-section">
-            <h3 class="month-name">{{ month_data.name }} {{ month_data.year }}</h3>
+        <div class="month-section" id="month-section-{{ month_data.year }}-{{ month_data.month }}">
+            <div class="month-header-row">
+                <h3 class="month-name">{{ month_data.name }} {{ month_data.year }}</h3>
+                <button class="month-pill-btn {% if month_data.is_active %}active-pill{% endif %}"
+                        id="month-pill-{{ month_data.year }}-{{ month_data.month }}"
+                        hx-get="/history/month?year={{ month_data.year }}&month={{ month_data.month }}"
+                        hx-target="#day-breakdown"
+                        onclick="selectMonthPill(this)"
+                        title="View complete {{ month_data.name }} overview and spending breakdown">
+                    Full Month
+                </button>
+            </div>
+            
             <div class="calendar-grid">
                 <!-- Weekday Headers -->
                 <div class="weekday-header">Sun</div>
@@ -25,7 +57,7 @@
                         {% if day.day == 0 %}
                             <div class="calendar-day empty"></div>
                         {% else %}
-                            <div class="calendar-day {% if not day.in_window %}inactive{% endif %} {% if day.is_today %}today active-selected{% endif %}"
+                            <div class="calendar-day {% if not day.in_window %}inactive{% endif %} {% if day.is_today %}today{% endif %}"
                                  {% if day.in_window %}
                                  hx-get="/history/day?date={{ day.date.isoformat() }}"
                                  hx-target="#day-breakdown"
@@ -45,22 +77,28 @@
         {% endfor %}
     </div>
 
-    <!-- Right Column: Day Breakdown -->
-    <div class="breakdown-card" id="day-breakdown" hx-get="/history/day?date={{ today.isoformat() }}" hx-trigger="load">
+    <!-- Right Column: Day or Month Breakdown Pane -->
+    <div class="breakdown-card" id="day-breakdown" 
+         hx-get="/history/month?year={{ default_month.year }}&month={{ default_month.month }}" 
+         hx-trigger="load">
         <div style="text-align: center; color: var(--text-secondary); padding: 4rem 1rem;">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.75rem; opacity: 0.6;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <p style="font-size: 0.875rem; font-weight: 500;">Loading today's activity...</p>
+            <p style="font-size: 0.875rem; font-weight: 500;">Loading {{ default_month.name }} {{ default_month.year }} overview...</p>
         </div>
     </div>
 </div>
 
 <script>
     function selectCalendarDay(element) {
-        // Remove active class from all days
+        // Clear active from all day cells
         document.querySelectorAll('.calendar-day').forEach(cell => {
             cell.classList.remove('active-selected');
         });
-        // Add active class to clicked day
+        // Clear active from all month pills
+        document.querySelectorAll('.month-pill-btn').forEach(btn => {
+            btn.classList.remove('active-pill');
+        });
+        // Add active to clicked day
         element.classList.add('active-selected');
         
         // On mobile/tablet, scroll breakdown card into view smoothly
@@ -71,6 +109,45 @@
                     breakdown.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 100);
             }
+        }
+    }
+
+    function selectMonthPill(element) {
+        // Clear active from all day cells
+        document.querySelectorAll('.calendar-day').forEach(cell => {
+            cell.classList.remove('active-selected');
+        });
+        // Clear active from all month pills
+        document.querySelectorAll('.month-pill-btn').forEach(btn => {
+            btn.classList.remove('active-pill');
+        });
+        // Add active to clicked pill
+        element.classList.add('active-pill');
+        
+        // On mobile/tablet, scroll breakdown card into view smoothly
+        if (window.innerWidth <= 768) {
+            const breakdown = document.getElementById('day-breakdown');
+            if (breakdown) {
+                setTimeout(() => {
+                    breakdown.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+    }
+
+    function selectMonthOverviewByDate(year, month) {
+        // Clear active from all day cells
+        document.querySelectorAll('.calendar-day').forEach(cell => {
+            cell.classList.remove('active-selected');
+        });
+        // Clear active from all month pills
+        document.querySelectorAll('.month-pill-btn').forEach(btn => {
+            btn.classList.remove('active-pill');
+        });
+        // Activate target month pill if on screen
+        const targetPill = document.getElementById(`month-pill-${year}-${month}`);
+        if (targetPill) {
+            targetPill.classList.add('active-pill');
         }
     }
 </script>
