@@ -2,12 +2,12 @@
 
 <div class="month-breakdown-wrapper">
     <!-- Header -->
-    <div class="month-overview-header">
-        <div class="month-overview-title-group">
-            <h2>{{ month_name }} {{ year }} Overview</h2>
-            <div class="month-overview-badge">
-                {{ txs|length }} transaction{% if txs|length != 1 %}s{% endif %} • {% if is_current_month %}Current Month{% else %}Full Month{% endif %}
-            </div>
+    <div class="month-hero-header">
+        <h2 class="month-main-title">{{ month_name }} {{ year }} Overview</h2>
+        <div class="month-meta-row">
+            <span>{{ txs|length }} transaction{% if txs|length != 1 %}s{% endif %}</span>
+            <span>•</span>
+            <span class="month-meta-badge">{% if is_current_month %}Current Month{% else %}Full Month Summary{% endif %}</span>
         </div>
     </div>
 
@@ -33,9 +33,9 @@
     </div>
 
     <!-- Spending Breakdown Section (Wireframe Style) -->
-    <div class="breakdown-categories-section">
-        <div class="breakdown-section-header">
-            <span class="breakdown-section-title">Spending Breakdown ({{ month_name }})</span>
+    <div class="month-overview-section month-breakdown-section">
+        <div class="month-section-header">
+            <span class="month-section-title">Spending Breakdown ({{ month_name }})</span>
             <span class="breakdown-daily-avg">
                 <span class="daily-avg-bullet">•</span>
                 <span class="daily-avg-label">Daily Avg:</span>
@@ -66,9 +66,10 @@
     </div>
 
     <!-- Month Transactions Section -->
-    <div class="month-tx-section">
-        <div class="breakdown-section-title" style="margin-top: 0.5rem; margin-bottom: 0.6rem;">
-            Transactions Log
+    <div class="month-overview-section month-tx-section">
+        <div class="month-section-header">
+            <span class="month-section-title">Transactions Log</span>
+            <span class="month-section-sub">{{ txs|length }} item{% if txs|length != 1 %}s{% endif %}</span>
         </div>
 
         <div class="transaction-list-container" style="max-height: 380px;">
@@ -77,7 +78,7 @@
                     No transactions recorded for this month.
                 </div>
             {% else %}
-                <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+                <div style="display: flex; flex-direction: column; gap: 1.25rem; width: 100%;">
                     {% for date_val, day_txs in txs_by_date.items() %}
                     <div class="history-tx-group">
                         <div class="history-group-header">

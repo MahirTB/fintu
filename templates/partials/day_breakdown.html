@@ -1,45 +1,49 @@
 {% from 'partials/category_icons.html' import category_icon %}
 
 <div class="day-breakdown-wrapper">
-    <!-- Top Back Navigation -->
-    <div class="breakdown-back-nav">
-        <button class="back-to-month-btn"
+    <!-- Top Nav: Subtle Breadcrumb -->
+    <div class="day-nav-bar">
+        <button class="back-to-month-link"
                 hx-get="/history/month?year={{ selected_date.year }}&month={{ selected_date.month }}"
                 hx-target="#day-breakdown"
                 onclick="selectMonthOverviewByDate({{ selected_date.year }}, {{ selected_date.month }})">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-            <span>View {{ selected_date.strftime('%B %Y') }} Overview</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            <span>Back to {{ selected_date.strftime('%B %Y') }} Overview</span>
         </button>
+        <span class="day-nav-badge">Day Log</span>
     </div>
 
-    <!-- Header -->
-    <div class="day-overview-header">
-        <h2>Day Details</h2>
-        <div class="breakdown-date-header">
-            {{ selected_date.strftime('%A, %B %d, %Y') }}
+    <!-- Main Date Header -->
+    <div class="day-hero-header">
+        <h2 class="day-main-title">{{ selected_date.strftime('%A, %B %d, %Y') }}</h2>
+        <div class="day-meta-row">
+            <span>{{ transactions|length }} transaction{% if transactions|length != 1 %}s{% endif %} recorded</span>
         </div>
     </div>
 
-    <!-- Day Stats -->
+    <!-- Day KPI Grid -->
     <div class="day-kpi-grid">
-        <div class="breakdown-stat-mini income">
-            <span>Income</span>
-            <span>+৳{{ "{:,.0f}".format(stats.income) }}</span>
+        <div class="day-kpi-card income">
+            <span class="kpi-label">Day Income</span>
+            <span class="kpi-value">+৳{{ "{:,.0f}".format(stats.income) }}</span>
         </div>
-        <div class="breakdown-stat-mini expense">
-            <span>Expenses</span>
-            <span>-৳{{ "{:,.0f}".format(stats.expense) }}</span>
+        <div class="day-kpi-card expense">
+            <span class="kpi-label">Day Expenses</span>
+            <span class="kpi-value">-৳{{ "{:,.0f}".format(stats.expense) }}</span>
         </div>
-        <div class="breakdown-stat-mini balance {% if stats.balance >= 0 %}positive{% else %}negative{% endif %}">
-            <span>Net</span>
-            <span>৳{{ "{:,.0f}".format(stats.balance) }}</span>
+        <div class="day-kpi-card balance {% if stats.balance >= 0 %}positive{% else %}negative{% endif %}">
+            <span class="kpi-label">Day Net</span>
+            <span class="kpi-value">৳{{ "{:,.0f}".format(stats.balance) }}</span>
         </div>
     </div>
 
     <!-- Optional Day Breakdown if categories exist -->
     {% if breakdown and breakdown.categories %}
-    <div class="breakdown-categories-section" style="margin-top: 0.5rem;">
-        <span class="breakdown-section-title">Day Spending Breakdown</span>
+    <div class="day-overview-section day-breakdown-section">
+        <div class="day-section-header">
+            <span class="day-section-title">Spending Breakdown</span>
+            <span class="day-section-sub">Total ৳{{ "{:,.0f}".format(stats.expense) }}</span>
+        </div>
         <div class="breakdown-bars-list">
             {% for item in breakdown.categories %}
             <div class="breakdown-bar-row">
@@ -58,12 +62,13 @@
     {% endif %}
 
     <!-- Transactions on this day -->
-    <div class="day-tx-section" style="margin-top: 0.5rem;">
-        <div class="breakdown-section-title" style="margin-bottom: 0.6rem;">
-            Transactions
+    <div class="day-overview-section day-tx-section">
+        <div class="day-section-header">
+            <span class="day-section-title">Transactions</span>
+            <span class="day-section-sub">{{ transactions|length }} item{% if transactions|length != 1 %}s{% endif %}</span>
         </div>
 
-        <div class="transaction-list-container" style="max-height: 280px;">
+        <div class="transaction-list-container" style="max-height: 320px;">
             {% if not transactions %}
                 <div class="breakdown-empty-msg">
                     No transactions recorded on this day.

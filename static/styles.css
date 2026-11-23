@@ -47,7 +47,7 @@ body {
 
 .container {
   width: 100%;
-  max-width: 900px;
+  max-width: 1120px;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1025,13 +1025,15 @@ button.submit-btn:active {
 /* Calendar Layout */
 .calendar-page-grid {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 2rem;
+  grid-template-columns: 360px 1fr;
+  gap: 2.25rem;
+  align-items: start;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .calendar-page-grid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 }
 
@@ -1252,13 +1254,12 @@ button.submit-btn:active {
 /* Breakdown panel */
 .breakdown-card {
   background: var(--card-bg);
-  padding: 1.75rem;
+  padding: 2rem;
   border-radius: 20px;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
   min-width: 0;
 }
 
@@ -1443,63 +1444,132 @@ button.submit-btn:active {
   color: var(--expense-color);
 }
 
-/* Month Breakdown Overview Pane */
+/* Day & Month Breakdown Overview Panes */
+.day-breakdown-wrapper,
 .month-breakdown-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
   min-width: 0;
 }
 
-.month-overview-header {
+/* Day Breadcrumb & Top Bar */
+.day-nav-bar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
 }
 
-.month-overview-title-group h2 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  margin: 0 0 0.25rem 0;
-}
-
-.month-overview-badge {
-  font-size: 0.75rem;
+.back-to-month-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: transparent;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  margin-left: -0.75rem;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
   font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.back-to-month-link:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-color);
+}
+
+.back-to-month-link svg {
+  transition: transform var(--transition-fast);
+}
+
+.back-to-month-link:hover svg {
+  transform: translateX(-3px);
+}
+
+.day-nav-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+}
+
+/* Headers */
+.day-hero-header,
+.month-hero-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1.75rem;
+}
+
+.day-main-title,
+.month-main-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.day-meta-row,
+.month-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
-/* Month KPI Grid */
+.month-meta-badge {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* KPI Grids (Day & Month) */
+.day-kpi-grid,
 .month-kpi-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.85rem;
+  margin-bottom: 2rem;
 }
 
+.day-kpi-card,
 .month-kpi-card {
   background-color: var(--bg-color);
-  padding: 0.85rem;
+  padding: 1rem;
   border-radius: 12px;
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
   min-width: 0;
 }
 
+.day-kpi-card .kpi-label,
 .month-kpi-card .kpi-label {
   font-size: 0.65rem;
   text-transform: uppercase;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--text-secondary);
 }
 
+.day-kpi-card .kpi-value,
 .month-kpi-card .kpi-value {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -1508,18 +1578,22 @@ button.submit-btn:active {
   text-overflow: ellipsis;
 }
 
+.day-kpi-card.income .kpi-value,
 .month-kpi-card.income .kpi-value {
   color: var(--income-color);
 }
 
+.day-kpi-card.expense .kpi-value,
 .month-kpi-card.expense .kpi-value {
   color: var(--expense-color);
 }
 
+.day-kpi-card.balance.positive .kpi-value,
 .month-kpi-card.balance.positive .kpi-value {
   color: var(--income-color);
 }
 
+.day-kpi-card.balance.negative .kpi-value,
 .month-kpi-card.balance.negative .kpi-value {
   color: var(--expense-color);
 }
@@ -1540,52 +1614,53 @@ button.submit-btn:active {
   border-radius: 4px;
 }
 
-/* Day Breakdown Top Bar & Back Button */
-.breakdown-back-nav {
-  margin-bottom: 0.25rem;
+/* Sections with Clean Separators */
+.day-overview-section,
+.month-overview-section {
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border-color);
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.back-to-month-btn {
-  display: inline-flex;
+.day-overview-section:last-child,
+.month-overview-section:last-child {
+  margin-bottom: 0;
+}
+
+.day-section-header,
+.month-section-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.35rem 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.day-section-title,
+.month-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.day-section-sub,
+.month-section-sub {
   font-size: 0.78rem;
   font-weight: 600;
-  border-radius: 999px;
-  background-color: var(--bg-color);
-  border: 1px solid var(--border-color);
   color: var(--text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.back-to-month-btn:hover {
-  border-color: var(--border-hover);
-  color: var(--text-primary);
-  background-color: var(--card-bg);
-}
-
-.day-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.breakdown-stat-mini.balance.positive span:last-child {
-  color: var(--income-color);
-}
-
-.breakdown-stat-mini.balance.negative span:last-child {
-  color: var(--expense-color);
 }
 
 /* History Grouped Transaction Log */
 .history-tx-group {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.5rem;
 }
 
 .history-group-header {
@@ -1617,11 +1692,11 @@ button.submit-btn:active {
 .breakdown-empty-msg {
   text-align: center;
   color: var(--text-secondary);
-  padding: 2rem 1rem;
+  padding: 2.25rem 1rem;
   font-size: 0.85rem;
   font-weight: 500;
   border: 1px dashed var(--border-color);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 /* Responsive Enhancements for Mobile Viewports */
@@ -1667,12 +1742,21 @@ button.submit-btn:active {
 @media (max-width: 600px) {
   .month-kpi-grid, .day-kpi-grid {
     grid-template-columns: 1fr;
-    gap: 0.5rem;
+    gap: 0.6rem;
   }
   
   .calendar-card-header {
     flex-wrap: wrap;
     gap: 0.6rem;
+  }
+
+  .day-main-title,
+  .month-main-title {
+    font-size: 1.18rem;
+  }
+
+  .breakdown-card {
+    padding: 1.25rem 1rem;
   }
 }
 
