@@ -1460,6 +1460,15 @@ button.submit-btn:active {
   min-width: 0;
 }
 
+.breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .breakdown-header h2 {
   font-size: 1.15rem;
   font-weight: 700;
@@ -1470,6 +1479,7 @@ button.submit-btn:active {
   align-items: baseline;
   gap: 0.4rem;
   flex-wrap: wrap;
+  margin: 0;
 }
 
 .breakdown-window-label {
@@ -1514,6 +1524,13 @@ button.submit-btn:active {
   flex-direction: column;
   gap: 0.75rem;
   margin-top: 0.25rem;
+}
+
+.breakdown-categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .breakdown-section-title {

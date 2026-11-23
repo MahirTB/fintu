@@ -4,15 +4,17 @@
     </div>
 
     {% if breakdown.categories %}
-        <!-- Daily Avg Metric -->
-        <div class="breakdown-daily-avg">
-            <span class="daily-avg-label">avg</span>
-            <span class="daily-avg-value">{{ breakdown.daily_avg_str }}</span>
-        </div>
-
         <!-- Categories Section -->
         <div class="breakdown-categories-section">
-            <div class="breakdown-section-title">Categories:</div>
+            <div class="breakdown-categories-header">
+                <div class="breakdown-section-title">Categories:</div>
+                {% if breakdown.daily_avg_str %}
+                <div class="breakdown-daily-avg">
+                    <span class="daily-avg-label">avg</span>
+                    <span class="daily-avg-value">{{ breakdown.daily_avg_str }}</span>
+                </div>
+                {% endif %}
+            </div>
             
             <div class="breakdown-bars-list">
                 {% for item in breakdown.categories %}
